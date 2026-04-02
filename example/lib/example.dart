@@ -86,6 +86,16 @@ Point buildPoint() {
   return Point.origin();
 }
 
+class MutablePoint {
+  double x, y;
+  MutablePoint(this.x, this.y);
+}
+
+void cascadeExamples() {
+  // LINT: prefer_dot_shorthand_for_constructors (cascade target)
+  MutablePoint p = MutablePoint(1, 2)..x = 3;
+}
+
 /// Static members
 
 class AppColors {
