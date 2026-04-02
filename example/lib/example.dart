@@ -304,10 +304,10 @@ FutureOr<Status> getStatusOr() {
   return Status.idle;
 }
 
-/// 6. Collection if/for elements without explicit type args
+/// 6. Collection if/for elements
 void collectionControlFlowExamples(bool condition) {
-  // NO LINT: if/for elements inside typed collections don't get
-  // direct type context from us
+  // LINT: direct elements get type context from the variable's List<Status> type
+  // NO LINT: if/for elements are wrapped in IfElement/ForElement — not yet handled
   final List<Status> statuses = [
     Status.idle,
     if (condition) Status.loading,

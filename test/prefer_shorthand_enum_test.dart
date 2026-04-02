@@ -100,6 +100,19 @@ void f() {
     );
   }
 
+  void test_typedListLiteral_inferredFromVariable() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f() {
+  List<Status> x = [Status.idle, Status.loading];
+}
+''',
+      [lint(78, 6), lint(91, 6)],
+    );
+  }
+
   void test_defaultParameterValue() async {
     await assertDiagnostics(
       r'''
