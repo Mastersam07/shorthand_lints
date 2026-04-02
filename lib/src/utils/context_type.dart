@@ -52,6 +52,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
   // Collection control flow elements (if/for/spread) — walk up to the enclosing collection
   IfElement() || ForElement() || SpreadElement() => _hasCollectionContext(node.parent!),
 
+  // Cascade target — context propagates from the cascade's parent
+  CascadeExpression(:var target) && final cascade when target == node => hasTypeContext(cascade),
+
   // Yield, default parameter, constructor field initializer
   YieldStatement() || DefaultFormalParameter() || ConstructorFieldInitializer() => true,
 
@@ -81,6 +84,7 @@ DartType? getContextType(Expression node) {
     ConstructorFieldInitializer(fieldName: SimpleIdentifier(:FieldElement element)) => element.type,
     BinaryExpression(:var leftOperand, :var rightOperand) when rightOperand == node => leftOperand.staticType,
     ReturnStatement() || ExpressionFunctionBody() => _getEnclosingReturnType(node),
+    CascadeExpression(:var target) && final cascade when target == node => getContextType(cascade),
     _ => null,
   };
 }
