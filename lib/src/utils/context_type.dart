@@ -36,12 +36,18 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
       when thenExpression == node || elseExpression == node =>
     hasTypeContext(node.parent! as Expression),
 
-  // Typed collection literals
+  // Typed collection literals (explicit type args or inferred from context)
   ListLiteral(typeArguments: _?) => true,
+  ListLiteral() && final list => hasTypeContext(list),
   SetOrMapLiteral(typeArguments: _?) => true,
+  SetOrMapLiteral() && final setOrMap => hasTypeContext(setOrMap),
 
   // Map entry in a typed map literal
-  MapLiteralEntry(:var parent) => parent is SetOrMapLiteral && parent.typeArguments != null,
+  MapLiteralEntry(:var parent) => switch (parent) {
+    SetOrMapLiteral(typeArguments: _?) => true,
+    SetOrMapLiteral() && final setOrMap => hasTypeContext(setOrMap),
+    _ => false,
+  },
 
   // Yield, default parameter, constructor field initializer
   YieldStatement() || DefaultFormalParameter() || ConstructorFieldInitializer() => true,
