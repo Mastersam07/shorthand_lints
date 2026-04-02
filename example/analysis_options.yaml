@@ -1,0 +1,11 @@
+# Enable the prefer_dot_shorthand plugin and all its rules.
+plugins:
+  shorthand_lints:
+    path: ../
+
+    diagnostics:
+      prefer_dot_shorthand_for_enums: true
+      prefer_dot_shorthand_for_constructors: true
+      prefer_dot_shorthand_for_statics: true
+      avoid_nested_shorthands: true
+      prefer_returning_shorthands: true

@@ -1,0 +1,10 @@
+name: example
+description: Example project demonstrating prefer_dot_shorthand plugin.
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+
+dev_dependencies:
+  shorthand_lints:
+    path: ../
