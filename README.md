@@ -38,7 +38,7 @@ dev_dependencies:
 ```yaml
 # analysis_options.yaml
 plugins:
-  prefer_dot_shorthand: ^0.1.0
+  shorthand_lints: ^0.1.0
 
   diagnostics:
     prefer_dot_shorthand_for_enums: true
