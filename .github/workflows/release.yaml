@@ -103,6 +103,14 @@ jobs:
         with:
           token: ${{ github.token }}
           tag: ${{ needs.release.outputs.tag }}
+      
+      - name: Check if there are changes
+        id: changes
+        run: echo "changed=$(git status --porcelain | wc -l)" >> $GITHUB_OUTPUT
+
+      - name: Sync with main
+        if: steps.changes.outputs.changed != 0
+        run: git stash && git pull && git stash pop
 
       - name: Commit CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v7

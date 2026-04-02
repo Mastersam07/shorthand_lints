@@ -129,6 +129,27 @@ MyClass m = .new('hello');
 ''');
   }
 
+  void test_nestedShorthand_staticMethodInvocation() async {
+    // Outer is a DotShorthandInvocation (static method), inner is shorthand
+    await assertDiagnostics(
+      r'''
+class Inner {
+  final String value;
+  Inner(this.value);
+}
+
+class Outer {
+  final Inner inner;
+  Outer(this.inner);
+  static Outer create(Inner inner) => Outer(inner);
+}
+
+Outer o = .create(.new('val'));
+''',
+      [lint(189, 11)],
+    );
+  }
+
   void test_noLint_fullyQualifiedWithShorthandArg() async {
     // The parent call is NOT a shorthand (it's fully qualified),
     // so nested shorthand in its args is fine — only the combo hurts.

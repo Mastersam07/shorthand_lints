@@ -49,6 +49,35 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
   _ => false,
 };
 
+/// Returns the context type that the parent expects for [node], or `null`
+/// if no usable context type exists.
+///
+/// This extracts the declared/expected type from the surrounding AST node,
+/// as opposed to the expression's own resolved type.
+DartType? getContextType(Expression node) {
+  final param = node.correspondingParameter;
+  if (param != null) return param.type;
+
+  // For expressions inside named arguments, check the named expression's parameter
+  if (node.parent is NamedExpression) {
+    final namedParam = (node.parent! as NamedExpression).correspondingParameter;
+    if (namedParam != null) return namedParam.type;
+  }
+
+  return switch (node.parent) {
+    VariableDeclaration(:var parent) => switch (parent) {
+      VariableDeclarationList(:var type?) => type.type,
+      _ => null,
+    },
+    AssignmentExpression(:var writeType) => writeType,
+    ConstructorFieldInitializer(:var fieldName) =>
+      fieldName.element is FieldElement ? (fieldName.element! as FieldElement).type : null,
+    BinaryExpression(:var leftOperand, :var rightOperand) when rightOperand == node => leftOperand.staticType,
+    ReturnStatement() || ExpressionFunctionBody() => _getEnclosingReturnType(node),
+    _ => null,
+  };
+}
+
 /// Checks if [prefixElement] refers to the same class/enum as
 /// the given [type].
 ///
@@ -68,6 +97,24 @@ bool isEnumConstantElement(Element? element) => switch (element) {
   PropertyAccessorElement(:var variable) => variable is FieldElement && variable.isEnumConstant,
   _ => false,
 };
+
+/// Walks up from [node] to find the enclosing function/method's
+/// declared return type. Returns `null` if not explicitly annotated.
+DartType? _getEnclosingReturnType(AstNode node) {
+  AstNode? current = node.parent;
+  while (current != null) {
+    switch (current) {
+      case FunctionDeclaration(:var returnType?):
+        return returnType.type;
+      case MethodDeclaration(:var returnType?):
+        return returnType.type;
+      case FunctionExpression() when current.parent is! FunctionDeclaration:
+        return null;
+    }
+    current = current.parent;
+  }
+  return null;
+}
 
 /// Returns true if [element] is an enum declaration.
 bool isEnumElement(Element? element) => element is EnumElement;

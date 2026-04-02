@@ -193,4 +193,23 @@ dynamic f() {
 }
 ''');
   }
+
+  void test_methodDeclaration_returnStatement() async {
+    await assertDiagnostics(
+      r'''
+class Point {
+  final double x, y;
+  Point(this.x, this.y);
+  Point.origin() : x = 0, y = 0;
+}
+
+class Factory {
+  Point build() {
+    return Point.origin();
+  }
+}
+''',
+      [lint(141, 5)],
+    );
+  }
 }

@@ -195,4 +195,17 @@ void f() {
 }
 ''');
   }
+
+  void test_ternaryExpression() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f(bool condition) {
+  Status s = condition ? Status.idle : Status.loading;
+}
+''',
+      [lint(97, 6), lint(111, 6)],
+    );
+  }
 }
