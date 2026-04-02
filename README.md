@@ -1,5 +1,8 @@
 # shorthand_lints
 
+[![Test & Coverage](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yml)
+![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Mastersam07/shorthand_lints/dev/coverage-badge.json)
+
 A Dart analyzer plugin that provides lint rules to encourage **dot shorthand syntax** (Dart 3.10+).
 
 Built on the [new first-party analyzer plugin system](https://dart.dev/tools/analyzer-plugins) — diagnostics appear directly in your IDE and `dart analyze` output with no extra commands needed.
