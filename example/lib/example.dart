@@ -273,8 +273,7 @@ Animal getAnimal() {
 
 /// 2. Nullish coalescing (??) context
 void nullishCoalescingExamples(Status? maybeStatus) {
-  // NO LINT: right side of ?? has type context from left operand
-  // prefer_shorthands would flag → maybeStatus ?? .idle
+  // LINT: right side of ?? has type context from left operand
   Status result = maybeStatus ?? Status.idle;
 }
 

@@ -23,9 +23,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
   // Return statement / expression body
   ReturnStatement() || ExpressionFunctionBody() => true,
 
-  // Right side of == or !=
+  // Right side of ==, !=, or ??
   BinaryExpression(:var rightOperand, :var operator)
-      when rightOperand == node && (operator.lexeme == '==' || operator.lexeme == '!=') =>
+      when rightOperand == node && (operator.lexeme == '==' || operator.lexeme == '!=' || operator.lexeme == '??') =>
     true,
 
   // Switch case
