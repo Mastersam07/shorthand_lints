@@ -1,0 +1,91 @@
+name: Test & Coverage
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.10.0
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        run: dart analyze lib/ test/
+
+      - name: Run tests with coverage
+        run: dart test --coverage=coverage
+
+      - name: Install coverage tools
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --report-on=lib
+
+      - name: Enforce minimum coverage
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 70
+
+      - name: Extract coverage percentage
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        id: coverage
+        run: |
+          sudo apt-get install -y lcov > /dev/null 2>&1
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep 'lines' | sed 's/.*: \([0-9.]*\)%.*/\1/')
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Coverage: $COVERAGE%"
+
+      - name: Update coverage badge
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+        run: |
+          PERCENT="${{ steps.coverage.outputs.percentage }}"
+          if (( $(echo "$PERCENT >= 90" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$PERCENT >= 75" | bc -l) )); then
+            COLOR="green"
+          elif (( $(echo "$PERCENT >= 60" | bc -l) )); then
+            COLOR="yellow"
+          else
+            COLOR="red"
+          fi
+
+          echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${PERCENT}%\",\"color\":\"${COLOR}\"}" > coverage-badge.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage-badge.json
+          if ! git diff --cached --quiet; then
+            git commit -m "ci: update coverage badge [skip ci]"
+            git pull --rebase
+            git push
+          fi

@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.10.0
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze
+        run: dart analyze lib/ test/
+
+      - name: Run tests
+        run: dart test
+
+      - name: Get next version
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: dev
+          patchList: fix, bugfix, perf, refactor, test, tests, chore
+          fallbackTag: v0.0.1
+
+      - name: Update pubspec.yaml version
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.semver.outputs.nextStrict }}/" pubspec.yaml
+          echo "pubspec.yaml version set to ${{ steps.semver.outputs.nextStrict }}"
+          grep '^version:' pubspec.yaml
+
+      - name: Commit version bump
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          commit_message: 'build(release): ${{ steps.semver.outputs.next }} [skip ci]'
+
+      - name: Package release artifact
+        run: |
+          mkdir -p release
+          rsync -a \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.DS_Store' \
+            --exclude='.vscode' \
+            --exclude='.idea' \
+            --exclude='*.iml' \
+            --exclude='release' \
+            ./ release/shorthand/
+          cd release
+          zip -r shorthand-${{ steps.semver.outputs.nextStrict }}.zip shorthand/
+
+      - name: Create Release Entry
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.semver.outputs.next }}
+          generateReleaseNotes: true
+          artifacts: release/shorthand-${{ steps.semver.outputs.nextStrict }}.zip
+
+    outputs:
+      tag: ${{ steps.semver.outputs.next }}
+
+  update-changelog:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update CHANGELOG
+        uses: requarks/changelog-action@v1
+        with:
+          token: ${{ github.token }}
+          tag: ${{ needs.release.outputs.tag }}
+
+      - name: Commit CHANGELOG.md
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          branch: dev
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          commit_message: 'docs: ${{ needs.release.outputs.tag }} [skip ci]'
+          file_pattern: CHANGELOG.md
