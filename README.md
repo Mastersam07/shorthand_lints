@@ -33,7 +33,7 @@ dev_dependencies:
   shorthand_lints:
     git:
       url: https://github.com/mastersam07/shorthand_lints
-      ref: dev
+      ref: <version>  # replace with the latest release tag
 ```
 
 ### 2. Enable in analysis_options.yaml
