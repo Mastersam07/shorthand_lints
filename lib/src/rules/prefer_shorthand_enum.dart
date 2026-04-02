@@ -3,7 +3,6 @@ import 'package:analyzer/analysis_rule/rule_context.dart';
 import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
 
 import '../utils/context_type.dart';
@@ -60,8 +59,7 @@ class _Visitor extends SimpleAstVisitor<void> {
 
     // Verify the identifier refers to an enum constant
     // (not a static method, getter, etc. — those go to the statics rule)
-    final identifierElement = node.identifier.element;
-    if (identifierElement is! FieldElement || !identifierElement.isEnumConstant) {
+    if (!isEnumConstantElement(node.identifier.element)) {
       return;
     }
 
@@ -72,6 +70,6 @@ class _Visitor extends SimpleAstVisitor<void> {
     if (!prefixMatchesType(prefixElement, node.staticType)) return;
 
     // Report at the prefix (the redundant part)
-    rule.reportAtNode(node.prefix);
+    rule.reportAtNode(node.prefix, arguments: [node.identifier.name, node.prefix.name]);
   }
 }

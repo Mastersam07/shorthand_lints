@@ -142,7 +142,7 @@ class _Visitor extends SimpleAstVisitor<void> {
       // annotation on the function expression itself. We skip these
       // to avoid false positives — the three existing prefer_shorthand
       // rules already handle typed variable declarations.
-      if (current is FunctionExpression) {
+      if (current is FunctionExpression && current.parent is! FunctionDeclaration) {
         return null;
       }
 

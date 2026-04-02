@@ -64,7 +64,7 @@ class _Visitor extends SimpleAstVisitor<void> {
 
     // Skip enum constants — handled by prefer_shorthand_enum
     final identifierElement = node.identifier.element;
-    if (identifierElement is FieldElement && identifierElement.isEnumConstant) {
+    if (isEnumConstantElement(identifierElement)) {
       return;
     }
 
@@ -94,6 +94,6 @@ class _Visitor extends SimpleAstVisitor<void> {
     if (!prefixMatchesType(prefixElement, node.staticType)) return;
 
     // Report at the prefix
-    rule.reportAtNode(node.prefix);
+    rule.reportAtNode(node.prefix, arguments: [node.identifier.name, node.prefix.name]);
   }
 }

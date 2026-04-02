@@ -16,7 +16,9 @@ bool hasTypeContext(Expression node) {
   if (parent is VariableDeclaration) {
     final declarationList = parent.parent;
     if (declarationList is VariableDeclarationList) {
-      return declarationList.type != null;
+      final declaredType = declarationList.type?.type;
+      if (declaredType == null || declaredType is DynamicType) return false;
+      return true;
     }
     return false;
   }
@@ -154,13 +156,22 @@ bool prefixMatchesType(Element? prefixElement, DartType? type) {
   return false;
 }
 
-/// Returns true if [element] is an enum declaration.
-bool isEnumElement(Element? element) {
-  return element is EnumElement;
+/// Returns true if [element] refers to an enum constant.
+///
+/// The element may be a [FieldElement] directly, or a
+/// [PropertyAccessorElement] (synthetic getter) wrapping one.
+bool isEnumConstantElement(Element? element) {
+  if (element is FieldElement) return element.isEnumConstant;
+  if (element is PropertyAccessorElement) {
+    final variable = element.variable;
+    return variable is FieldElement && variable.isEnumConstant;
+  }
+  return false;
 }
+
+/// Returns true if [element] is an enum declaration.
+bool isEnumElement(Element? element) => element is EnumElement;
 
 /// Returns true if [element] is a class or enum declaration
 /// (i.e. can have static members or constructors).
-bool isClassOrEnumElement(Element? element) {
-  return element is ClassElement || element is EnumElement;
-}
+bool isClassOrEnumElement(Element? element) => element is ClassElement || element is EnumElement;

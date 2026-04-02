@@ -80,6 +80,7 @@ class _Visitor extends SimpleAstVisitor<void> {
     // The type name is the redundant prefix — report on it.
     // For `SomeClass()`, the fix is `.new()`.
     // For `SomeClass.named()`, the fix is `.named()`.
-    rule.reportAtNode(type);
+    final name = constructorName.name?.name ?? 'new';
+    rule.reportAtNode(type, arguments: [name]);
   }
 }

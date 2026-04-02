@@ -19,11 +19,6 @@ import 'package:analyzer/error/error.dart';
 /// final Another a = .new(Some(version: SomeClass('val')));
 /// ```
 ///
-/// The rule inspects:
-/// - `InstanceCreationExpression` arguments that begin with `.`
-/// - `MethodInvocation` arguments that begin with `.`
-/// - `PrefixedIdentifier` arguments that begin with `.`
-///
 /// Only the **inner** shorthand is flagged so the developer can decide
 /// which level to expand, while the outermost shorthand stays concise.
 class AvoidNestedShorthands extends AnalysisRule {
@@ -47,8 +42,8 @@ class AvoidNestedShorthands extends AnalysisRule {
   @override
   void registerNodeProcessors(RuleVisitorRegistry registry, RuleContext context) {
     final visitor = _Visitor(this, context);
-    registry.addInstanceCreationExpression(this, visitor);
-    registry.addMethodInvocation(this, visitor);
+    registry.addDotShorthandInvocation(this, visitor);
+    registry.addDotShorthandConstructorInvocation(this, visitor);
   }
 }
 
@@ -59,51 +54,21 @@ class _Visitor extends SimpleAstVisitor<void> {
   _Visitor(this.rule, this.context);
 
   @override
-  void visitInstanceCreationExpression(InstanceCreationExpression node) {
-    _checkForNestedShorthands(node, node.argumentList);
-  }
+  void visitDotShorthandInvocation(DotShorthandInvocation node) => _checkArguments(node.argumentList);
 
   @override
-  void visitMethodInvocation(MethodInvocation node) {
-    // Only care about method invocations that are themselves shorthands,
-    // i.e. the target is null and the method name starts the expression
-    // (dot shorthand like `.named(args)`).
-    _checkForNestedShorthands(node, node.argumentList);
-  }
+  void visitDotShorthandConstructorInvocation(DotShorthandConstructorInvocation node) =>
+      _checkArguments(node.argumentList);
 
-  /// If [parentNode] is itself a dot shorthand invocation, scan its
-  /// [argumentList] for arguments that are also dot shorthands.
-  void _checkForNestedShorthands(Expression parentNode, ArgumentList args) {
-    // First, verify the parent expression is a dot shorthand.
-    // A dot shorthand in source starts with `.` — we detect this by
-    // checking if the expression's source begins with a dot token.
-    if (!_isDotShorthand(parentNode)) return;
-
+  void _checkArguments(ArgumentList args) {
     for (final argument in args.arguments) {
-      // Unwrap named expressions: `foo(name: .value)`
       final expr = argument is NamedExpression ? argument.expression : argument;
 
-      if (_isDotShorthand(expr)) {
+      if (expr is DotShorthandInvocation ||
+          expr is DotShorthandConstructorInvocation ||
+          expr is DotShorthandPropertyAccess) {
         rule.reportAtNode(expr);
       }
     }
-  }
-
-  /// Returns `true` if [node] appears to be a dot shorthand expression.
-  ///
-  /// Detection strategy: a dot shorthand in resolved AST is an
-  /// `InstanceCreationExpression`, `MethodInvocation`, or
-  /// `PrefixedIdentifier` whose source text starts with `.`.
-  ///
-  /// We use the token offset: if the first token of the expression is
-  /// a period (`.`), it's a shorthand.
-  bool _isDotShorthand(Expression node) {
-    final firstToken = node.beginToken;
-    // In dot shorthand syntax, the very first token is a `.`
-    // For `InstanceCreationExpression`: `.new(...)` or `.named(...)`
-    //   beginToken is `.`
-    // For `PrefixedIdentifier` shorthand: `.value`
-    //   beginToken is `.`
-    return firstToken.lexeme == '.';
   }
 }
