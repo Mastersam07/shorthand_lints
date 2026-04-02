@@ -3,7 +3,7 @@ description: >
   A Dart analyzer plugin that provides lint rules to encourage 
   dot shorthand syntax (Dart 3.10+). Flags redundant type prefixes 
   on enums, constructors, and static members where shorthand would work.
-version: 0.0.1
+version: 0.1.0
 repository: https://github.com/Mastersam07/shorthand_lints
 
 environment:
