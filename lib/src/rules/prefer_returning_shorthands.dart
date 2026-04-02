@@ -87,16 +87,17 @@ class _Visitor extends SimpleAstVisitor<void> {
   void _checkExpression(Expression expression, DartType returnType) {
     switch (expression) {
       // Enum value or static member: `return Status.loading;`
-      case PrefixedIdentifier(:var prefix) when prefix.element is InterfaceElement:
-        if (_elementMatchesType(prefix.element! as InterfaceElement, returnType)) {
+      case PrefixedIdentifier(prefix: SimpleIdentifier(:InterfaceElement element) && var prefix):
+        if (_elementMatchesType(element, returnType)) {
           rule.reportAtNode(prefix);
         }
 
       // Constructor call: `return Point.origin();` or `return SomeClass();`
-      case InstanceCreationExpression(:var constructorName) when constructorName.type.type is InterfaceType:
-        final constructedType = constructorName.type.type! as InterfaceType;
-        if (_elementMatchesType(constructedType.element, returnType)) {
-          rule.reportAtNode(constructorName.type);
+      case InstanceCreationExpression(
+        constructorName: ConstructorName(type: NamedType(:InterfaceType type) && var namedType),
+      ):
+        if (_elementMatchesType(type.element, returnType)) {
+          rule.reportAtNode(namedType);
         }
     }
   }

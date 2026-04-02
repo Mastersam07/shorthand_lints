@@ -33,7 +33,7 @@ dev_dependencies:
   shorthand_lints:
     git:
       url: https://github.com/mastersam07/shorthand_lints
-      ref: dev
+      ref: <version>  # replace with the latest release tag
 ```
 
 ### 2. Enable in analysis_options.yaml
@@ -102,8 +102,20 @@ Point buildPoint() { return Point.origin(); }
 Status getStatus() => .success;
 Point buildPoint() { return .origin(); }
 
-// Also works with async — unwraps Future<T>:
+// Also works with async — unwraps Future<T> and FutureOr<T>:
 Future<Status> fetch() async => .loading; // ✅
+FutureOr<Status> getStatus() => .idle;    // ✅
+```
+
+### Nullish coalescing, ternary, records, and collections
+
+```dart
+// All flagged ⛔ — context type is inferred from surrounding code:
+Status result = maybeStatus ?? Status.idle;
+Status s = condition ? Status.idle : Status.loading;
+(Status, Status) pair = (Status.idle, Status.loading);
+List<Status> items = [Status.idle, if (cond) Status.loading];
+Map<String, Status> m = {'key': Status.idle};
 ```
 
 ### Nested shorthands (readability guard)
@@ -125,6 +137,7 @@ The rules are conservative and only flag code where shorthand is guaranteed to c
 - **Type mismatch**: `double gap = Spacing.small;` — `Spacing.small` is a `double`, not `Spacing`.
 - **Dynamic context**: `dynamic d = Status.loading;` — shorthand needs a concrete type.
 - **No return type annotation**: `getStatus() => Status.loading;` — inferred return types are not flagged.
+- **Subtype assignment**: `Animal a = Dog('Rex');` — shorthand `.new('Rex')` would call `Animal()`, changing semantics.
 - **Shorthand on left of `==`**: This is a Dart compile error, not a lint concern.
 
 ## Suppressing diagnostics
@@ -147,9 +160,9 @@ plugins:
 
 PRs welcome! Some areas to improve:
 
-- **More context detection**: collection literals without explicit type args, cascade targets, spread elements.
 - **Configurable severity**: allow teams to choose between `info` and `warning`.
 - **Configurable nesting depth**: allow one level of nesting but flag two+.
+- **Cascade targets**: detect shorthand opportunities in cascade expressions.
 
 ## License
 

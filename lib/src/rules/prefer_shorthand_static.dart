@@ -72,7 +72,6 @@ class _Visitor extends SimpleAstVisitor<void> {
     final isStatic = switch (identifierElement) {
       FieldElement(:var isStatic) => isStatic,
       PropertyAccessorElement(:var isStatic) => isStatic,
-      MethodElement(:var isStatic) => isStatic,
       _ => false,
     };
     if (!isStatic) return;

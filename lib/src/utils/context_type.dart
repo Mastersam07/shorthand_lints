@@ -32,9 +32,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
   SwitchPatternCase() || SwitchCase() || ConstantPattern() => true,
 
   // Ternary — context propagates into both branches
-  ConditionalExpression(:var thenExpression, :var elseExpression)
+  ConditionalExpression(:var thenExpression, :var elseExpression) && final ternary
       when thenExpression == node || elseExpression == node =>
-    hasTypeContext(node.parent! as Expression),
+    hasTypeContext(ternary),
 
   // Typed collection literals (explicit type args or inferred from context)
   ListLiteral(typeArguments: _?) => true,
@@ -48,6 +48,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
     SetOrMapLiteral() && final setOrMap => hasTypeContext(setOrMap),
     _ => false,
   },
+
+  // Collection control flow elements (if/for/spread) — walk up to the enclosing collection
+  IfElement() || ForElement() || SpreadElement() => _hasCollectionContext(node.parent!),
 
   // Yield, default parameter, constructor field initializer
   YieldStatement() || DefaultFormalParameter() || ConstructorFieldInitializer() => true,
@@ -65,9 +68,8 @@ DartType? getContextType(Expression node) {
   if (param != null) return param.type;
 
   // For expressions inside named arguments, check the named expression's parameter
-  if (node.parent is NamedExpression) {
-    final namedParam = (node.parent! as NamedExpression).correspondingParameter;
-    if (namedParam != null) return namedParam.type;
+  if (node.parent case NamedExpression(:var correspondingParameter?)) {
+    return correspondingParameter.type;
   }
 
   return switch (node.parent) {
@@ -76,8 +78,7 @@ DartType? getContextType(Expression node) {
       _ => null,
     },
     AssignmentExpression(:var writeType) => writeType,
-    ConstructorFieldInitializer(:var fieldName) =>
-      fieldName.element is FieldElement ? (fieldName.element! as FieldElement).type : null,
+    ConstructorFieldInitializer(fieldName: SimpleIdentifier(:FieldElement element)) => element.type,
     BinaryExpression(:var leftOperand, :var rightOperand) when rightOperand == node => leftOperand.staticType,
     ReturnStatement() || ExpressionFunctionBody() => _getEnclosingReturnType(node),
     _ => null,
@@ -89,6 +90,18 @@ DartType? getContextType(Expression node) {
 ///
 /// This is used to verify that the type prefix in `ClassName.member`
 /// matches the resolved type, confirming dot shorthand would work.
+/// Walks up through nested [CollectionElement] nodes (if/for/spread)
+/// to find the enclosing collection literal and check its type context.
+bool _hasCollectionContext(AstNode node) => switch (node) {
+  ListLiteral(typeArguments: _?) => true,
+  ListLiteral() && final list => hasTypeContext(list),
+  SetOrMapLiteral(typeArguments: _?) => true,
+  SetOrMapLiteral() && final setOrMap => hasTypeContext(setOrMap),
+  // Nested control flow: `[if (a) if (b) Status.idle]`
+  IfElement(:var parent?) || ForElement(:var parent?) || SpreadElement(:var parent?) => _hasCollectionContext(parent),
+  _ => false,
+};
+
 bool prefixMatchesType(Element? prefixElement, DartType? type) => switch ((prefixElement, type)) {
   (var prefix?, InterfaceType(:var element)) => prefix == element,
   _ => false,
