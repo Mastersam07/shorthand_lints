@@ -156,12 +156,27 @@ plugins:
     prefer_dot_shorthand_for_enums: false
 ```
 
+## Severity
+
+All rules default to `info`. To change severity, set the rule to a severity string in the `diagnostics` section:
+
+```yaml
+plugins:
+  shorthand_lints:
+    diagnostics:
+      prefer_dot_shorthand_for_enums: warning
+      avoid_nested_shorthands: error
+```
+
+Valid values: `info`, `warning`, `error`, `true` (enable with default), `false` (disable).
+
+## Known limitations
+
+- **Configurable nesting depth**: `avoid_nested_shorthands` flags any nesting. Ideally teams could allow one level but flag two+. This is blocked by the analyzer plugin framework — `RuleContext` carries no rule-specific config, and `analysis_options.yaml` only supports `true`/`false`/severity per rule, not custom options.
+
 ## Contributing
 
-PRs welcome! Some areas to improve:
-
-- **Configurable severity**: allow teams to choose between `info` and `warning`.
-- **Configurable nesting depth**: allow one level of nesting but flag two+.
+PRs welcome!
 
 ## License
 
