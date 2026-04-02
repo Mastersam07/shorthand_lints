@@ -319,4 +319,20 @@ void f() {
 }
 ''');
   }
+
+  void test_cascadeTarget_typedVariable() async {
+    await assertDiagnostics(
+      r'''
+class Point {
+  double x = 0, y = 0;
+  Point(this.x, this.y);
+}
+
+void f() {
+  Point p = Point(1, 2)..x = 3;
+}
+''',
+      [lint(88, 5)],
+    );
+  }
 }

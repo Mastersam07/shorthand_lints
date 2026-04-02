@@ -162,7 +162,6 @@ PRs welcome! Some areas to improve:
 
 - **Configurable severity**: allow teams to choose between `info` and `warning`.
 - **Configurable nesting depth**: allow one level of nesting but flag two+.
-- **Cascade targets**: detect shorthand opportunities in cascade expressions.
 
 ## License
 
