@@ -19,6 +19,14 @@ import 'package:analyzer/error/error.dart';
 /// final Another a = .new(Some(version: SomeClass('val')));
 /// ```
 ///
+/// ## Configuration
+///
+/// ```yaml
+/// diagnostics:
+///   avoid_nested_shorthands:
+///     max_depth: 1  # allow 1 level of nesting, flag at 2+ (default: 0)
+/// ```
+///
 /// Only the **inner** shorthand is flagged so the developer can decide
 /// which level to expand, while the outermost shorthand stays concise.
 class AvoidNestedShorthands extends AnalysisRule {
@@ -41,7 +49,8 @@ class AvoidNestedShorthands extends AnalysisRule {
 
   @override
   void registerNodeProcessors(RuleVisitorRegistry registry, RuleContext context) {
-    final visitor = _Visitor(this, context);
+    final maxDepth = options['max_depth'] as int? ?? 0;
+    final visitor = _Visitor(this, context, maxDepth: maxDepth);
     registry.addDotShorthandInvocation(this, visitor);
     registry.addDotShorthandConstructorInvocation(this, visitor);
   }
@@ -50,27 +59,34 @@ class AvoidNestedShorthands extends AnalysisRule {
 class _Visitor extends SimpleAstVisitor<void> {
   final AnalysisRule rule;
   final RuleContext context;
+  final int maxDepth;
 
-  _Visitor(this.rule, this.context);
+  _Visitor(this.rule, this.context, {required this.maxDepth});
 
   @override
-  void visitDotShorthandInvocation(DotShorthandInvocation node) => _checkArguments(node.argumentList);
+  void visitDotShorthandInvocation(DotShorthandInvocation node) => _checkArguments(node.argumentList, depth: 1);
 
   @override
   void visitDotShorthandConstructorInvocation(DotShorthandConstructorInvocation node) =>
-      _checkArguments(node.argumentList);
+      _checkArguments(node.argumentList, depth: 1);
 
-  void _checkArguments(ArgumentList args) {
+  void _checkArguments(ArgumentList args, {required int depth}) {
     for (final argument in args.arguments) {
       final expr = switch (argument) {
         NamedExpression(:var expression) => expression,
         _ => argument,
       };
 
-      if (expr is DotShorthandInvocation ||
-          expr is DotShorthandConstructorInvocation ||
-          expr is DotShorthandPropertyAccess) {
-        rule.reportAtNode(expr);
+      switch (expr) {
+        case DotShorthandInvocation(:var argumentList):
+        case DotShorthandConstructorInvocation(:var argumentList):
+          if (depth >= maxDepth) {
+            rule.reportAtNode(expr);
+          } else {
+            _checkArguments(argumentList, depth: depth + 1);
+          }
+        case DotShorthandPropertyAccess():
+          if (depth >= maxDepth) rule.reportAtNode(expr);
       }
     }
   }

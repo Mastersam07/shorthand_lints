@@ -150,6 +150,70 @@ Outer o = .create(.new('val'));
     );
   }
 
+  void test_nestedShorthand_defaultMaxDepth_flagsAtDepth1() async {
+    // max_depth: 0 (default) — flag any nesting
+    await assertDiagnostics(
+      r'''
+class Inner {
+  final String value;
+  Inner(this.value);
+}
+
+class Outer {
+  final Inner inner;
+  Outer(this.inner);
+}
+
+Outer o = .new(.new('val'));
+''',
+      [lint(134, 11)],
+    );
+  }
+
+  void test_noLint_maxDepth1_allowsDepth1() async {
+    // max_depth: 1 — allow 1 level of nesting
+    rule.options = {'max_depth': 1};
+    await assertNoDiagnostics(r'''
+class Inner {
+  final String value;
+  Inner(this.value);
+}
+
+class Outer {
+  final Inner inner;
+  Outer(this.inner);
+}
+
+Outer o = .new(.new('val'));
+''');
+  }
+
+  void test_nestedShorthand_maxDepth1_flagsAtDepth2() async {
+    // max_depth: 1 — allow 1 level, flag at 2+
+    rule.options = {'max_depth': 1};
+    await assertDiagnostics(
+      r'''
+class A {
+  final String v;
+  A(this.v);
+}
+
+class B {
+  final A a;
+  B(this.a);
+}
+
+class C {
+  final B b;
+  C(this.b);
+}
+
+C c = .new(.new(.new('val')));
+''',
+      [lint(131, 11)],
+    );
+  }
+
   void test_noLint_fullyQualifiedWithShorthandArg() async {
     // The parent call is NOT a shorthand (it's fully qualified),
     // so nested shorthand in its args is fine — only the combo hurts.
