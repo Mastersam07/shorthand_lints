@@ -299,9 +299,8 @@ void implicitDeclarationExamples() {
 }
 
 /// 5. FutureOr<T> unwrapping
-// LINT: the enum rule flags this (`.idle` is valid in FutureOr<Status> context).
-// However, prefer_returning_shorthands does NOT fire here because it doesn't
-// unwrap FutureOr<T> — only Future<T>.
+// LINT: both the enum rule and prefer_returning_shorthands flag this.
+// FutureOr<T> is unwrapped to T since T is directly assignable.
 FutureOr<Status> getStatusOr() {
   return Status.idle;
 }

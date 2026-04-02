@@ -137,6 +137,40 @@ Future<Status> f() async {
     );
   }
 
+  void test_futureOrReturn_unwrapsFutureOr() async {
+    await assertDiagnostics(
+      r'''
+import 'dart:async';
+
+enum Status { idle, loading, success, error }
+
+FutureOr<Status> f() {
+  return Status.idle;
+}
+''',
+      [lint(101, 6)],
+    );
+  }
+
+  void test_futureOrReturn_constructor() async {
+    await assertDiagnostics(
+      r'''
+import 'dart:async';
+
+class Point {
+  final double x, y;
+  Point(this.x, this.y);
+  Point.origin() : x = 0, y = 0;
+}
+
+FutureOr<Point> f() {
+  return Point.origin();
+}
+''',
+      [lint(149, 5)],
+    );
+  }
+
   // Should NOT lint
 
   void test_noLint_noReturnTypeAnnotation() async {
