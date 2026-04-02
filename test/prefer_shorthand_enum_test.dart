@@ -208,4 +208,17 @@ void f(bool condition) {
       [lint(97, 6), lint(111, 6)],
     );
   }
+
+  void test_nullishCoalescing() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f(Status? maybeStatus) {
+  Status result = maybeStatus ?? Status.idle;
+}
+''',
+      [lint(110, 6)],
+    );
+  }
 }
