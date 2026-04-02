@@ -62,7 +62,10 @@ class _Visitor extends SimpleAstVisitor<void> {
 
   void _checkArguments(ArgumentList args) {
     for (final argument in args.arguments) {
-      final expr = argument is NamedExpression ? argument.expression : argument;
+      final expr = switch (argument) {
+        NamedExpression(:var expression) => expression,
+        _ => argument,
+      };
 
       if (expr is DotShorthandInvocation ||
           expr is DotShorthandConstructorInvocation ||

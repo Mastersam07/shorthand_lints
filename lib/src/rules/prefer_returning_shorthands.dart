@@ -85,32 +85,19 @@ class _Visitor extends SimpleAstVisitor<void> {
   /// Checks if [expression] uses a fully-qualified form that could be
   /// shortened given the expected [returnType].
   void _checkExpression(Expression expression, DartType returnType) {
-    // Case 1: PrefixedIdentifier — enum value or static member
-    // e.g. `return Status.loading;`
-    if (expression is PrefixedIdentifier) {
-      final prefixElement = expression.prefix.element;
-      if (prefixElement == null) return;
+    switch (expression) {
+      // Enum value or static member: `return Status.loading;`
+      case PrefixedIdentifier(:var prefix) when prefix.element is InterfaceElement:
+        if (_elementMatchesType(prefix.element! as InterfaceElement, returnType)) {
+          rule.reportAtNode(prefix);
+        }
 
-      // Verify the prefix is a class/enum
-      if (prefixElement is! InterfaceElement) return;
-
-      // Verify the prefix type matches the return type
-      if (_elementMatchesType(prefixElement, returnType)) {
-        rule.reportAtNode(expression.prefix);
-      }
-      return;
-    }
-
-    // Case 2: InstanceCreationExpression — constructor call
-    // e.g. `return Point.origin();` or `return SomeClass();`
-    if (expression is InstanceCreationExpression) {
-      final constructedType = expression.constructorName.type.type;
-      if (constructedType is! InterfaceType) return;
-
-      if (_elementMatchesType(constructedType.element, returnType)) {
-        rule.reportAtNode(expression.constructorName.type);
-      }
-      return;
+      // Constructor call: `return Point.origin();` or `return SomeClass();`
+      case InstanceCreationExpression(:var constructorName) when constructorName.type.type is InterfaceType:
+        final constructedType = constructorName.type.type! as InterfaceType;
+        if (_elementMatchesType(constructedType.element, returnType)) {
+          rule.reportAtNode(constructorName.type);
+        }
     }
   }
 
@@ -122,28 +109,17 @@ class _Visitor extends SimpleAstVisitor<void> {
     AstNode? current = node.parent;
 
     while (current != null) {
-      // Function declaration: `Status getStatus() { ... }`
-      if (current is FunctionDeclaration) {
-        final returnTypeAnnotation = current.returnType;
-        if (returnTypeAnnotation == null) return null;
-        return _unwrapFutureIfAsync(returnTypeAnnotation.type, current.functionExpression.body);
-      }
+      switch (current) {
+        case FunctionDeclaration(:var returnType?, :var functionExpression):
+          return _unwrapFutureIfAsync(returnType.type, functionExpression.body);
 
-      // Method declaration: `Status getStatus() { ... }`
-      if (current is MethodDeclaration) {
-        final returnTypeAnnotation = current.returnType;
-        if (returnTypeAnnotation == null) return null;
-        return _unwrapFutureIfAsync(returnTypeAnnotation.type, current.body);
-      }
+        case MethodDeclaration(:var returnType?, :var body):
+          return _unwrapFutureIfAsync(returnType.type, body);
 
-      // Function expression (lambdas assigned to typed variables):
-      // `final StatusGetter fn = () { return Status.loading; };`
-      // For these, the context type comes from the variable, not an
-      // annotation on the function expression itself. We skip these
-      // to avoid false positives — the three existing prefer_shorthand
-      // rules already handle typed variable declarations.
-      if (current is FunctionExpression && current.parent is! FunctionDeclaration) {
-        return null;
+        // Bail for lambdas — context comes from the variable, not the
+        // function expression. The other prefer_shorthand rules handle those.
+        case FunctionExpression() when current.parent is! FunctionDeclaration:
+          return null;
       }
 
       current = current.parent;
@@ -173,10 +149,5 @@ class _Visitor extends SimpleAstVisitor<void> {
   }
 
   /// Checks if [element] (the prefix class/enum) matches [type].
-  bool _elementMatchesType(InterfaceElement element, DartType type) {
-    if (type is InterfaceType) {
-      return type.element == element;
-    }
-    return false;
-  }
+  bool _elementMatchesType(InterfaceElement element, DartType type) => type is InterfaceType && type.element == element;
 }

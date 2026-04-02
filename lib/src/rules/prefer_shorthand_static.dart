@@ -69,23 +69,13 @@ class _Visitor extends SimpleAstVisitor<void> {
     }
 
     // Must be a static member (field, getter, or method reference)
-    if (identifierElement == null) return;
-    if (identifierElement is! FieldElement &&
-        identifierElement is! PropertyAccessorElement &&
-        identifierElement is! MethodElement) {
-      return;
-    }
-
-    // For FieldElement / PropertyAccessorElement, verify it's static
-    if (identifierElement is FieldElement && !identifierElement.isStatic) {
-      return;
-    }
-    if (identifierElement is PropertyAccessorElement && !identifierElement.isStatic) {
-      return;
-    }
-    if (identifierElement is MethodElement && !identifierElement.isStatic) {
-      return;
-    }
+    final isStatic = switch (identifierElement) {
+      FieldElement(:var isStatic) => isStatic,
+      PropertyAccessorElement(:var isStatic) => isStatic,
+      MethodElement(:var isStatic) => isStatic,
+      _ => false,
+    };
+    if (!isStatic) return;
 
     // Verify context type exists
     if (!hasTypeContext(node)) return;

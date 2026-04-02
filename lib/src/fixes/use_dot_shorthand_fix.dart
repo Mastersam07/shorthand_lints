@@ -31,44 +31,29 @@ class UseDotShorthandFix extends ResolvedCorrectionProducer {
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
-    final coveringNode = this.coveringNode;
-    if (coveringNode == null) return;
+    switch ((coveringNode, coveringNode?.parent)) {
+      // Case 1: PrefixedIdentifier — enum value or static member.
+      // Delete the prefix text; the period stays, producing `.identifier`.
+      case (SimpleIdentifier node, PrefixedIdentifier(prefix: var prefix)) when node == prefix:
+        await builder.addDartFileEdit(file, (fileBuilder) {
+          fileBuilder.addDeletion(SourceRange(prefix.offset, prefix.length));
+        });
 
-    final parent = coveringNode.parent;
+      // Case 2: InstanceCreationExpression — constructor call.
+      case (NamedType namedType, ConstructorName(parent: InstanceCreationExpression instanceCreation)):
+        final namedConstructor = instanceCreation.constructorName.name;
 
-    // Case 1: PrefixedIdentifier — enum value or static member.
-    // Diagnostic is reported on the prefix (SimpleIdentifier).
-    // Delete the prefix text; the period stays, producing `.identifier`.
-    if (parent is PrefixedIdentifier && coveringNode == parent.prefix) {
-      await builder.addDartFileEdit(file, (fileBuilder) {
-        fileBuilder.addDeletion(SourceRange(parent.prefix.offset, parent.prefix.length));
-      });
-      return;
-    }
-
-    // Case 2: InstanceCreationExpression — constructor call.
-    // Diagnostic is reported on the NamedType node.
-    if (parent is ConstructorName && coveringNode is NamedType) {
-      final instanceCreation = parent.parent;
-      if (instanceCreation is! InstanceCreationExpression) return;
-
-      final namedConstructor = instanceCreation.constructorName.name;
-
-      await builder.addDartFileEdit(file, (fileBuilder) {
-        if (namedConstructor != null) {
-          // Named: `ClassName.named(args)` → `.named(args)`
-          // Delete the ClassName; the existing period + name stay.
-          fileBuilder.addDeletion(SourceRange(coveringNode.offset, coveringNode.length));
-        } else {
-          // Unnamed: `ClassName(args)` → `.new(args)`
-          // Replace ClassName with `.new`; `const` keyword is preserved
-          // automatically since it precedes the NamedType in the AST.
-          fileBuilder.addReplacement(SourceRange(coveringNode.offset, coveringNode.length), (editBuilder) {
-            editBuilder.write('.new');
-          });
-        }
-      });
-      return;
+        await builder.addDartFileEdit(file, (fileBuilder) {
+          if (namedConstructor != null) {
+            // Named: `ClassName.named(args)` → `.named(args)`
+            fileBuilder.addDeletion(SourceRange(namedType.offset, namedType.length));
+          } else {
+            // Unnamed: `ClassName(args)` → `.new(args)`
+            fileBuilder.addReplacement(SourceRange(namedType.offset, namedType.length), (editBuilder) {
+              editBuilder.write('.new');
+            });
+          }
+        });
     }
   }
 }
