@@ -111,10 +111,10 @@ class _Visitor extends SimpleAstVisitor<void> {
     while (current != null) {
       switch (current) {
         case FunctionDeclaration(:var returnType?, :var functionExpression):
-          return _unwrapFutureIfAsync(returnType.type, functionExpression.body);
+          return _unwrapReturnType(returnType.type, functionExpression.body);
 
         case MethodDeclaration(:var returnType?, :var body):
-          return _unwrapFutureIfAsync(returnType.type, body);
+          return _unwrapReturnType(returnType.type, body);
 
         // Bail for lambdas — context comes from the variable, not the
         // function expression. The other prefer_shorthand rules handle those.
@@ -128,25 +128,22 @@ class _Visitor extends SimpleAstVisitor<void> {
     return null;
   }
 
-  /// If the function body is async and the declared return type is
-  /// `Future<T>`, unwrap to `T` since `return value;` in an async
-  /// function expects `T`, not `Future<T>`.
-  DartType? _unwrapFutureIfAsync(DartType? type, FunctionBody body) {
-    if (type == null) return null;
+  /// Unwraps the return type to the inner type `T` when applicable:
+  /// - `Future<T>` → `T` in async functions
+  /// - `FutureOr<T>` → `T` always (since `T` is assignable to `FutureOr<T>`)
+  DartType? _unwrapReturnType(DartType? type, FunctionBody body) => switch (type) {
+    // FutureOr<T> → T (always, since T is directly assignable)
+    InterfaceType(:var typeArguments, :var isDartAsyncFutureOr) when isDartAsyncFutureOr && typeArguments.isNotEmpty =>
+      typeArguments.first,
 
-    final isAsync = body.isAsynchronous && !body.isGenerator;
-    if (!isAsync) return type;
+    // Future<T> → T (only in async functions)
+    InterfaceType(:var typeArguments, :var isDartAsyncFuture)
+        when isDartAsyncFuture && typeArguments.isNotEmpty && body.isAsynchronous && !body.isGenerator =>
+      typeArguments.first,
 
-    // Unwrap Future<T> → T
-    if (type is InterfaceType && type.isDartAsyncFuture) {
-      final typeArgs = type.typeArguments;
-      if (typeArgs.isNotEmpty) {
-        return typeArgs.first;
-      }
-    }
-
-    return type;
-  }
+    null => null,
+    _ => type,
+  };
 
   /// Checks if [element] (the prefix class/enum) matches [type].
   bool _elementMatchesType(InterfaceElement element, DartType type) => type is InterfaceType && type.element == element;
