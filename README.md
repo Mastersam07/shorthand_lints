@@ -1,4 +1,4 @@
-# prefer_dot_shorthand
+# shorthand_lints
 
 A Dart analyzer plugin that provides lint rules to encourage **dot shorthand syntax** (Dart 3.10+).
 
@@ -27,7 +27,10 @@ The first four rules include a **quick fix** so you can apply the shorthand with
 ```yaml
 # pubspec.yaml
 dev_dependencies:
-  prefer_dot_shorthand: ^0.1.0
+  shorthand_lints:
+    git:
+      url: https://github.com/mastersam07/shorthand_lints
+      ref: dev
 ```
 
 ### 2. Enable in analysis_options.yaml
@@ -132,7 +135,7 @@ Or disable a rule project-wide:
 
 ```yaml
 plugins:
-  prefer_dot_shorthand: ^0.1.0
+  shorthand_lints: ^0.1.0
   diagnostics:
     prefer_dot_shorthand_for_enums: false
 ```
