@@ -71,11 +71,14 @@ class _Visitor extends SimpleAstVisitor<void> {
 
     final classElement = constructedType.element;
 
-    // Verify the constructed type matches what the context expects.
-    // We check against the expression's own static type.
-    final exprType = node.staticType;
-    if (exprType is! InterfaceType) return;
-    if (exprType.element != classElement) return;
+    // Verify the constructed type matches the context type exactly.
+    // Dot shorthand `.new()` resolves against the context type, so
+    // `Animal a = Dog()` cannot become `Animal a = .new()` — that
+    // would call Animal(), not Dog().
+    final contextType = getContextType(node);
+    if (contextType != null) {
+      if (!prefixMatchesType(classElement, contextType)) return;
+    }
 
     // The type name is the redundant prefix — report on it.
     // For `SomeClass()`, the fix is `.new()`.

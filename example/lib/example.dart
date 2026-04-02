@@ -1,5 +1,7 @@
 // ignore_for_file: unused_local_variable, unused_element
 
+import 'dart:async';
+
 /// Example file demonstrating cases flagged by prefer_dot_shorthand.
 ///
 /// Run `dart analyze` in this directory to see the lint diagnostics.
@@ -222,4 +224,95 @@ void nestedShorthandExamples() {
   // Direct fully-qualified nesting is NOT flagged by this rule
   // (it's fine — there's no readability issue):
   final Another a = Another(Some(version: SomeClass('val')));
+}
+
+// ─── Cases we DON'T cover yet ────────────────────────────────────────
+
+/// 1. Subtype matching — Dog() in an Animal context
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+  Dog.buddy() : name = 'Buddy';
+}
+
+class Cat extends Animal {
+  @override
+  final String name;
+  Cat(this.name);
+}
+
+void subtypeExamples() {
+  // NO LINT: Animal has no constructor, so `.new('Rex')` wouldn't compile.
+  // We correctly skip this — the types don't match exactly.
+  Animal a = Dog('Rex');
+  Animal b = Dog.buddy();
+
+  // NO LINT: Even though Cat('Whiskers') is valid and Animal('Whiskers')
+  // would also be valid IF Animal had a constructor, we don't flag it
+  // because Dog != Animal.
+  Animal c = Cat('Whiskers');
+
+  // This is the case prefer_shorthands WOULD flag with isSubtypeOf:
+  // If the supertype has a matching constructor, shorthand works.
+  // e.g. given `class Base { Base(String s); }` and `class Sub extends Base { Sub(String s) : super(s); }`
+  //   Base x = Sub('hi');
+  // prefer_shorthands would suggest: Base x = .new('hi');
+  // That calls Base('hi'), not Sub('hi') — different semantics but valid.
+  // We don't do this because it changes which constructor is called.
+}
+
+Animal getAnimal() {
+  // NO LINT: subtype return — same reason
+  return Dog('Rex');
+}
+
+/// 2. Nullish coalescing (??) context
+void nullishCoalescingExamples(Status? maybeStatus) {
+  // NO LINT: right side of ?? has type context from left operand
+  // prefer_shorthands would flag → maybeStatus ?? .idle
+  Status result = maybeStatus ?? Status.idle;
+}
+
+/// 3. Record literal / record type support
+void recordExamples() {
+  // LINT: record fields get type context from the record type annotation
+  (Status, Status) pair = (Status.idle, Status.loading);
+
+  ({Status first, Status second}) named = (
+    first: Status.idle,
+    second: Status.loading,
+  );
+}
+
+/// 4. convert_implicit_declaration �� adding type to enable shorthand
+void implicitDeclarationExamples() {
+  // NO LINT: var has no type annotation — we don't add one
+  // prefer_shorthands (with convert_implicit_declaration) would convert to:
+  //   Status s = .loading;
+  var s = Status.loading;
+  final p = Point(1.0, 2.0);
+}
+
+/// 5. FutureOr<T> unwrapping
+// LINT: the enum rule flags this (`.idle` is valid in FutureOr<Status> context).
+// However, prefer_returning_shorthands does NOT fire here because it doesn't
+// unwrap FutureOr<T> — only Future<T>.
+FutureOr<Status> getStatusOr() {
+  return Status.idle;
+}
+
+/// 6. Collection if/for elements without explicit type args
+void collectionControlFlowExamples(bool condition) {
+  // NO LINT: if/for elements inside typed collections don't get
+  // direct type context from us
+  final List<Status> statuses = [
+    Status.idle,
+    if (condition) Status.loading,
+    for (var i = 0; i < 1; i++) Status.success,
+  ];
 }

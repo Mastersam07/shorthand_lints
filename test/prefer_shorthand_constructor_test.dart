@@ -205,4 +205,118 @@ void f() {
 }
 ''');
   }
+
+  void test_noLint_subtypeInVariable() async {
+    // Animal a = Dog('Rex') — Dog != Animal, shorthand would call Animal(), not Dog()
+    await assertNoDiagnostics(r'''
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+}
+
+void f() {
+  Animal a = Dog('Rex');
+}
+''');
+  }
+
+  void test_noLint_subtypeNamedConstructor() async {
+    await assertNoDiagnostics(r'''
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+  Dog.buddy() : name = 'Buddy';
+}
+
+void f() {
+  Animal a = Dog.buddy();
+}
+''');
+  }
+
+  void test_noLint_subtypeInReturnStatement() async {
+    await assertNoDiagnostics(r'''
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+}
+
+Animal f() {
+  return Dog('Rex');
+}
+''');
+  }
+
+  void test_noLint_subtypeInNamedArgument() async {
+    await assertNoDiagnostics(r'''
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+}
+
+void render({required Animal animal}) {}
+
+void f() {
+  render(animal: Dog('Rex'));
+}
+''');
+  }
+
+  void test_methodReturn_unnamed() async {
+    await assertDiagnostics(
+      r'''
+class Point {
+  final double x, y;
+  Point(this.x, this.y);
+}
+
+class Factory {
+  Point build() {
+    return Point(1, 2);
+  }
+}
+''',
+      [lint(108, 5)],
+    );
+  }
+
+  void test_noLint_subtypeInPositionalArgument() async {
+    await assertNoDiagnostics(r'''
+abstract class Animal {
+  String get name;
+}
+
+class Dog extends Animal {
+  @override
+  final String name;
+  Dog(this.name);
+}
+
+void render(Animal animal) {}
+
+void f() {
+  render(Dog('Rex'));
+}
+''');
+  }
 }

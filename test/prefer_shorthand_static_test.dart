@@ -139,4 +139,21 @@ void f(Foo foo) {
 }
 ''');
   }
+
+  void test_staticGetter() async {
+    await assertDiagnostics(
+      r'''
+class AppColors {
+  static AppColors get defaultColor => AppColors._(0xFF);
+  final int value;
+  const AppColors._(this.value);
+}
+
+void f() {
+  AppColors c = AppColors.defaultColor;
+}
+''',
+      [lint(158, 9)],
+    );
+  }
 }
