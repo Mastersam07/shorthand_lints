@@ -273,4 +273,30 @@ void f(bool condition) {
       [lint(107, 6)],
     );
   }
+
+  void test_typedMapLiteral() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f() {
+  var x = <String, Status>{'a': Status.idle};
+}
+''',
+      [lint(90, 6)],
+    );
+  }
+
+  void test_mapLiteral_inferredType() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f() {
+  Map<String, Status> x = {'a': Status.idle};
+}
+''',
+      [lint(90, 6)],
+    );
+  }
 }

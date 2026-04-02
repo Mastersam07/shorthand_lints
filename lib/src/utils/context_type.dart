@@ -32,9 +32,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
   SwitchPatternCase() || SwitchCase() || ConstantPattern() => true,
 
   // Ternary — context propagates into both branches
-  ConditionalExpression(:var thenExpression, :var elseExpression)
+  ConditionalExpression(:var thenExpression, :var elseExpression) && final ternary
       when thenExpression == node || elseExpression == node =>
-    hasTypeContext(node.parent! as Expression),
+    hasTypeContext(ternary),
 
   // Typed collection literals (explicit type args or inferred from context)
   ListLiteral(typeArguments: _?) => true,
@@ -68,9 +68,8 @@ DartType? getContextType(Expression node) {
   if (param != null) return param.type;
 
   // For expressions inside named arguments, check the named expression's parameter
-  if (node.parent is NamedExpression) {
-    final namedParam = (node.parent! as NamedExpression).correspondingParameter;
-    if (namedParam != null) return namedParam.type;
+  if (node.parent case NamedExpression(:var correspondingParameter?)) {
+    return correspondingParameter.type;
   }
 
   return switch (node.parent) {
@@ -79,8 +78,7 @@ DartType? getContextType(Expression node) {
       _ => null,
     },
     AssignmentExpression(:var writeType) => writeType,
-    ConstructorFieldInitializer(:var fieldName) =>
-      fieldName.element is FieldElement ? (fieldName.element! as FieldElement).type : null,
+    ConstructorFieldInitializer(fieldName: SimpleIdentifier(:FieldElement element)) => element.type,
     BinaryExpression(:var leftOperand, :var rightOperand) when rightOperand == node => leftOperand.staticType,
     ReturnStatement() || ExpressionFunctionBody() => _getEnclosingReturnType(node),
     _ => null,

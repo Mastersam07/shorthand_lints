@@ -118,6 +118,17 @@ void staticExamples() {
 
   // NO LINT: Spacing.small is double, not Spacing — types don't match
   double gap = Spacing.small;
+
+  // NO LINT: static method tear-off.
+  // `AppColors._` references the constructor as a function, not a value.
+  // The variable type is `AppColors Function(int)`, not `AppColors`.
+  // Shorthand only applies when the result type matches — here it's
+  // a function reference, so there's nothing to shorten.
+  //
+  // Compare:
+  //   AppColors color = AppColors.primary;   // LINT — `.primary` works
+  //   AppColors Function(int) f = AppColors._; // NO LINT — not a value
+  AppColors Function(int) factory = AppColors._;
 }
 
 /// Named arguments
@@ -226,9 +237,7 @@ void nestedShorthandExamples() {
   final Another a = Another(Some(version: SomeClass('val')));
 }
 
-// ─── Cases we DON'T cover yet ────────────────────────────────────────
-
-/// 1. Subtype matching — Dog() in an Animal context
+/// Subtype matching — Dog() in an Animal context
 abstract class Animal {
   String get name;
 }
@@ -271,13 +280,13 @@ Animal getAnimal() {
   return Dog('Rex');
 }
 
-/// 2. Nullish coalescing (??) context
+/// Nullish coalescing (??) context
 void nullishCoalescingExamples(Status? maybeStatus) {
   // LINT: right side of ?? has type context from left operand
   Status result = maybeStatus ?? Status.idle;
 }
 
-/// 3. Record literal / record type support
+/// Record literal / record type support
 void recordExamples() {
   // LINT: record fields get type context from the record type annotation
   (Status, Status) pair = (Status.idle, Status.loading);
@@ -288,7 +297,7 @@ void recordExamples() {
   );
 }
 
-/// 4. convert_implicit_declaration �� adding type to enable shorthand
+/// convert_implicit_declaration �� adding type to enable shorthand
 void implicitDeclarationExamples() {
   // NO LINT: var has no type annotation — we don't add one
   // prefer_shorthands (with convert_implicit_declaration) would convert to:
@@ -297,14 +306,14 @@ void implicitDeclarationExamples() {
   final p = Point(1.0, 2.0);
 }
 
-/// 5. FutureOr<T> unwrapping
+/// FutureOr<T> unwrapping
 // LINT: both the enum rule and prefer_returning_shorthands flag this.
 // FutureOr<T> is unwrapped to T since T is directly assignable.
 FutureOr<Status> getStatusOr() {
   return Status.idle;
 }
 
-/// 6. Collection if/for elements
+/// Collection if/for elements
 void collectionControlFlowExamples(bool condition) {
   // LINT: all elements get type context, including if/for elements
   final List<Status> statuses = [
