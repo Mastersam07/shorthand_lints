@@ -1,6 +1,6 @@
 # shorthand_lints
 
-[![Test & Coverage](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yml)
+[![Tests](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yaml/badge.svg?branch=dev)](https://github.com/Mastersam07/shorthand_lints/actions/workflows/test.yaml)
 ![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Mastersam07/shorthand_lints/dev/coverage-badge.json)
 
 A Dart analyzer plugin that provides lint rules to encourage **dot shorthand syntax** (Dart 3.10+).
