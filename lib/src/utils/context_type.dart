@@ -49,6 +49,9 @@ bool hasTypeContext(Expression node) => switch (node.parent) {
     _ => false,
   },
 
+  // Collection control flow elements (if/for/spread) — walk up to the enclosing collection
+  IfElement() || ForElement() || SpreadElement() => _hasCollectionContext(node.parent!),
+
   // Yield, default parameter, constructor field initializer
   YieldStatement() || DefaultFormalParameter() || ConstructorFieldInitializer() => true,
 
@@ -89,6 +92,18 @@ DartType? getContextType(Expression node) {
 ///
 /// This is used to verify that the type prefix in `ClassName.member`
 /// matches the resolved type, confirming dot shorthand would work.
+/// Walks up through nested [CollectionElement] nodes (if/for/spread)
+/// to find the enclosing collection literal and check its type context.
+bool _hasCollectionContext(AstNode node) => switch (node) {
+  ListLiteral(typeArguments: _?) => true,
+  ListLiteral() && final list => hasTypeContext(list),
+  SetOrMapLiteral(typeArguments: _?) => true,
+  SetOrMapLiteral() && final setOrMap => hasTypeContext(setOrMap),
+  // Nested control flow: `[if (a) if (b) Status.idle]`
+  IfElement(:var parent?) || ForElement(:var parent?) || SpreadElement(:var parent?) => _hasCollectionContext(parent),
+  _ => false,
+};
+
 bool prefixMatchesType(Element? prefixElement, DartType? type) => switch ((prefixElement, type)) {
   (var prefix?, InterfaceType(:var element)) => prefix == element,
   _ => false,

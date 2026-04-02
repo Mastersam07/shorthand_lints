@@ -306,8 +306,7 @@ FutureOr<Status> getStatusOr() {
 
 /// 6. Collection if/for elements
 void collectionControlFlowExamples(bool condition) {
-  // LINT: direct elements get type context from the variable's List<Status> type
-  // NO LINT: if/for elements are wrapped in IfElement/ForElement — not yet handled
+  // LINT: all elements get type context, including if/for elements
   final List<Status> statuses = [
     Status.idle,
     if (condition) Status.loading,

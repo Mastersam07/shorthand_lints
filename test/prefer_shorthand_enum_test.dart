@@ -234,4 +234,43 @@ void f(Status? maybeStatus) {
       [lint(110, 6)],
     );
   }
+
+  void test_collectionIfElement() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f(bool condition) {
+  var x = <Status>[if (condition) Status.idle];
+}
+''',
+      [lint(106, 6)],
+    );
+  }
+
+  void test_collectionForElement() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f() {
+  var x = <Status>[for (var i = 0; i < 1; i++) Status.idle];
+}
+''',
+      [lint(105, 6)],
+    );
+  }
+
+  void test_collectionIfElement_inferredType() async {
+    await assertDiagnostics(
+      r'''
+enum Status { idle, loading, success, error }
+
+void f(bool condition) {
+  List<Status> x = [if (condition) Status.idle];
+}
+''',
+      [lint(107, 6)],
+    );
+  }
 }
