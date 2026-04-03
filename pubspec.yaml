@@ -22,8 +22,8 @@ dev_dependencies:
 
 dependency_overrides:
   analyzer:
-    path: /Users/bushadigtalltd/dart-sdk/sdk/pkg/analyzer
+    path: ../../dart-sdk/sdk/pkg/analyzer
   analysis_server_plugin:
-    path: /Users/bushadigtalltd/dart-sdk/sdk/pkg/analysis_server_plugin
+    path: ../../dart-sdk/sdk/pkg/analysis_server_plugin
   analyzer_plugin:
-    path: /Users/bushadigtalltd/dart-sdk/sdk/pkg/analyzer_plugin
+    path: ../../dart-sdk/sdk/pkg/analyzer_plugin
